@@ -25,6 +25,7 @@ import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.util.ByteArrayDataSource;
 import java.io.IOException;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -117,8 +118,7 @@ public class MailService {
         fileDataStringMap.put(FileData.PDF_FILE_NAME, "advice.pdf");
 
         GenerateFileService service = new GenerateFileService();
-        byte[] bytes = service.createPdfFile(mapRequest, fileDataStringMap);
-        return bytes;
+        return service.createPdfFile(mapRequest, fileDataStringMap);
     }
 
     public void sendMailWithByteArray(User user) throws MessagingException, IOException {
