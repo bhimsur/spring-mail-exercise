@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.InputStreamSource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -18,10 +19,12 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
+import javax.activation.DataHandler;
 import javax.mail.MessagingException;
+import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
+import javax.mail.util.ByteArrayDataSource;
 import java.io.IOException;
-import java.rmi.server.ExportException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -34,6 +37,20 @@ public class MailService {
     public MailService(JavaMailSender javaMailSender) {
         this.javaMailSender = javaMailSender;
     }
+
+    private static final MailRequest mailRequest = MailRequest
+            .builder()
+            .accountNumber("14045")
+            .accountOwnerName("subakir")
+            .amountWords("Seratus Juta Rupiah")
+            .aroType("ARO")
+            .balance("Rp. 100.000.000,00")
+            .createDate("21 Juni 2021")
+            .currency("IDR")
+            .interestRate("6%")
+            .timePeriod("3 Bulan")
+            .build();
+
 
     private String html_template = "<!DOCTYPE html>\n" +
             "<html xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:th=\"http://www.thymeleaf.org\">\n" +
@@ -79,21 +96,41 @@ public class MailService {
 
     public ResponseEntity<ByteArrayResource> downloadPdf(MailRequest request) throws IOException {
         try {
-            Map<String, Object> mapRequest = ThymeleafUtil.convertObjectToMap(request);
-            Map<FileData, String> fileDataStringMap = new HashMap<>();
-            fileDataStringMap.put(FileData.DIRECTORY, "file-handler/");
-            fileDataStringMap.put(FileData.HTML_FILE_NAME, "advice.html");
-            fileDataStringMap.put(FileData.HTML_TEMPLATE, html_template);
-            fileDataStringMap.put(FileData.PDF_FILE_NAME, "advice.pdf");
-
             HttpHeaders headers = new HttpHeaders();
             headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_PDF_VALUE);
             headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=advice.pdf");
 
-            GenerateFileService service = new GenerateFileService();
-            byte[] bytes = service.createPdfFile(mapRequest, fileDataStringMap);
-            ByteArrayResource resource = new ByteArrayResource(bytes);
+            ByteArrayResource resource = new ByteArrayResource(constructPdfByteArray(request));
             return new ResponseEntity<ByteArrayResource>(resource, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            throw e;
+        }
+    }
+
+    private byte[] constructPdfByteArray(MailRequest request) throws IOException {
+        Map<String, Object> mapRequest = ThymeleafUtil.convertObjectToMap(request);
+        Map<FileData, String> fileDataStringMap = new HashMap<>();
+        fileDataStringMap.put(FileData.DIRECTORY, "file-handler/");
+        fileDataStringMap.put(FileData.HTML_FILE_NAME, "advice.html");
+        fileDataStringMap.put(FileData.HTML_TEMPLATE, html_template);
+        fileDataStringMap.put(FileData.PDF_FILE_NAME, "advice.pdf");
+
+        GenerateFileService service = new GenerateFileService();
+        byte[] bytes = service.createPdfFile(mapRequest, fileDataStringMap);
+        return bytes;
+    }
+
+    public void sendMailWithByteArray(User user) throws MessagingException, IOException {
+        try {
+            MimeMessage mimeMessage = javaMailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
+            InputStreamSource fileStream = new ByteArrayResource(constructPdfByteArray(mailRequest));
+            helper.setTo(user.getEmailAddress());
+            helper.setSubject(user.getSubject());
+            helper.setText(user.getBody());
+            helper.addAttachment("advice.pdf", fileStream);
+            javaMailSender.send(mimeMessage);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             throw e;

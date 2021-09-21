@@ -49,4 +49,14 @@ public class RegistrationController {
     public ResponseEntity<ByteArrayResource> downloadPdf(@RequestBody MailRequest request) throws IOException {
         return mailService.downloadPdf(request);
     }
+
+    @PostMapping("/sendadvice")
+    public MailResponse sendMailWithByteArray(@RequestBody User user) throws MessagingException {
+        try {
+            mailService.sendMailWithByteArray(user);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return MailResponse.builder().isSuccess(true).build();
+    }
 }
