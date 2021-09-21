@@ -33,3 +33,7 @@ build/
 .vscode/
 
 file-handler/
+
+application.properties
+
+resources/
