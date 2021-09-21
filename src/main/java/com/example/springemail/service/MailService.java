@@ -125,11 +125,10 @@ public class MailService {
         try {
             MimeMessage mimeMessage = javaMailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
-            InputStreamSource fileStream = new ByteArrayResource(constructPdfByteArray(mailRequest));
             helper.setTo(user.getEmailAddress());
             helper.setSubject(user.getSubject());
             helper.setText(user.getBody());
-            helper.addAttachment("advice.pdf", fileStream);
+            helper.addAttachment("advice.pdf", new ByteArrayResource(constructPdfByteArray(mailRequest)));
             javaMailSender.send(mimeMessage);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
