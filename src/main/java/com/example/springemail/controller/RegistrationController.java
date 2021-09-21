@@ -1,9 +1,14 @@
 package com.example.springemail.controller;
 
+import com.example.springemail.model.MailRequest;
+import com.example.springemail.model.MailResponse;
 import com.example.springemail.model.User;
 import com.example.springemail.service.MailService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.ResponseEntity;
 import org.springframework.mail.MailException;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -21,22 +26,27 @@ public class RegistrationController {
     private User user;
 
     @PostMapping("/sendmail")
-    public String send(@RequestBody User user) {
+    public MailResponse send(@RequestBody User user) {
         try {
             mailService.sendEmail(user);
         } catch (MailException e) {
-            System.out.println(e);
+            return MailResponse.builder().isSuccess(false).build();
         }
-        return "Mail send to " + user.getEmailAddress();
+        return MailResponse.builder().isSuccess(true).build();
     }
 
     @PostMapping("/sendemailattachment")
-    public String sendWithAttachment(@RequestBody User user) throws MessagingException {
+    public MailResponse sendWithAttachment(@RequestBody User user) throws MessagingException {
         try {
             mailService.sendEmailWithAttachment(user);
         } catch (MailException e) {
-            System.out.println(e);
+            return MailResponse.builder().isSuccess(false).build();
         }
-        return "Mail send to " + user.getEmailAddress();
+        return MailResponse.builder().isSuccess(true).build();
+    }
+
+    @PostMapping("/downloadpdf")
+    public ResponseEntity<ByteArrayResource> downloadPdf(@RequestBody MailRequest request) throws IOException {
+        return mailService.downloadPdf(request);
     }
 }
