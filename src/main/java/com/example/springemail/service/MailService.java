@@ -18,6 +18,7 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.springframework.util.FileSystemUtils;
 
 import javax.activation.DataHandler;
 import javax.mail.MessagingException;
@@ -25,6 +26,7 @@ import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.util.ByteArrayDataSource;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
@@ -133,6 +135,8 @@ public class MailService {
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             throw e;
+        } finally {
+            FileSystemUtils.deleteRecursively(Paths.get("file-handler"));
         }
     }
 }
